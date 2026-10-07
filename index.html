@@ -452,8 +452,10 @@
 <script id="ptpAuthJs">
 (function(){
 /* ---- CLOUD SETUP (optional): Firebase project ki details yahan daalein. Khali = Local mode ---- */
-var FB={apiKey:"",projectId:""};
-var cloud=!!(FB.apiKey&&FB.projectId),LS='ptp_users_v1',SS='ptp_session_v1',FL='ptp_fail_v1';
+var FB={apiKey:"AIzaSyB1qzo1E_5L2Of7Hl0MJjdInUs79r53ZXI",projectId:"ptp-report"};
+/* Sirf in emails ko signup par Admin milega (apna email yahan likhein). Khali rakha to pehla user Admin banega */
+var ADMIN_EMAILS=["siddharthsingh9522@gmail.com"];
+var cloud=!!(FB.apiKey&&FB.projectId),hosted=location.protocol!='file:',blocked=!cloud&&hosted,LS='ptp_users_v1',SS='ptp_session_v1',FL='ptp_fail_v1';
 var DOC='https://firestore.googleapis.com/v1/projects/'+FB.projectId+'/databases/(default)/documents/ptp_auth/store?key='+FB.apiKey;
 var store={users:[],log:[]},me=null,tab='login';
 var $=function(i){return document.getElementById(i)};
@@ -481,15 +483,16 @@ function badge(){var n=store.users.filter(function(u){return u.status=='pending'
 function logout(){localStorage.removeItem(SS);me=null;$('ptpUser').style.display='none';$('ptpAdmin').style.display='none';$('ptpAuth').style.display='flex';$('paP').value='';setTab('login')}
 async function submit(){
  var em=$('paE').value.trim().toLowerCase(),pw=$('paP').value,nm=$('paN').value.trim(),btn=$('paGo');
+ if(blocked)return msg('Setup incomplete: online hosting par Firebase (Cloud mode) zaroori hai. Admin se sampark karein.');
  if(!em||!pw)return msg('Email aur password daalein');
  btn.disabled=true;
  try{await load();
  if(tab=='signup'){
   if(!nm)return msg('Naam daalein');if(pw.length<6)return msg('Password kam se kam 6 characters ka rakhein');
   if(findU(em))return msg('Ye email pehle se registered hai');
-  var first=store.users.length==0,salt=rnd();
+  var first=ADMIN_EMAILS.length?ADMIN_EMAILS.some(function(x){return x.trim().toLowerCase()==em}):store.users.length==0,salt=rnd();
   store.users.push({id:rnd(),name:nm,email:em,salt:salt,hash:await hash(pw,salt),pv:rnd(),role:first?'admin':'user',status:first?'approved':'pending',created:Date.now(),last:null});
-  log('New signup: '+em+(first?' (first user = Admin)':''));await save();
+  log('New signup: '+em+(first?' (Admin)':''));await save();
   if(first){msg('Admin account ban gaya! Ab login karein.','ok');setTab('login')}else{msg('Account ban gaya. Admin approve karega tab login kar payenge.','ok');setTab('login');$('paMsg').className='pa-msg ok';$('paMsg').textContent='Account ban gaya. Admin approve karega tab login kar payenge.'}
   return}
  var f={};try{f=JSON.parse(localStorage.getItem(FL))||{}}catch(e){}
@@ -546,7 +549,8 @@ $('paShow').onchange=function(){$('paP').type=this.checked?'text':'password'};
 $('puOut').onclick=logout;$('puPw').onclick=changePw;$('puAdmin').onclick=openAdmin;
 $('paClose').onclick=function(){$('ptpAdmin').style.display='none'};$('paRef').onclick=openAdmin;$('aAdd').onclick=addUser;$('aQ').oninput=render;
 $('aT').onclick=function(e){var b=e.target.closest('button');if(b)act(b.dataset.a,b.dataset.i)};
-$('paMode').textContent=cloud?'☁ Cloud mode – sab devices par same users':'💾 Local mode – users sirf is browser me save hote hain';
+if(blocked){$('paMode').style.color='var(--danger)'}
+$('paMode').textContent=blocked?'⚠ Cloud mode (Firebase) set nahi hai – login/signup band hai':cloud?'☁ Cloud mode – sab devices par same users':'💾 Local mode – users sirf is browser me save hote hain';
 check().then(function(ok){if(!ok&&me==null)$('ptpAuth').style.display='flex'});
 setInterval(function(){if(me)check().then(function(ok){if(!ok)logout()})},45000);
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&me)check().then(function(ok){if(!ok)logout()})});
