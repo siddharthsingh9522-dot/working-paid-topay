@@ -397,6 +397,163 @@
 </style>
 </head>
 <body>
+<!-- ===== PTP AUTH (login / signup / admin) ===== -->
+<style id="ptpAuthCss">
+#ptpAuth{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto}
+.pa-box{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:1.6rem}
+.pa-box h2{font-family:var(--font-head);margin:0 0 .2rem;font-size:1.3rem}
+.pa-sub{color:var(--ink-soft);font-size:.85rem;margin:0 0 1rem}
+.pa-tabs{display:flex;gap:.4rem;margin-bottom:1rem}
+.pa-tabs button{flex:1;padding:.55rem;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+.pa-tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pa-box label{display:block;font-size:.78rem;font-weight:600;color:var(--ink-soft);margin:.7rem 0 .25rem}
+.pa-box input,.pa-add input{width:100%;padding:.6rem .7rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.pa-btn{padding:.6rem 1rem;border:none;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:700;cursor:pointer}
+.pa-btn.full{width:100%;margin-top:1rem}.pa-btn:disabled{opacity:.6}
+.pa-btn.sm{padding:.3rem .6rem;font-size:.75rem;font-weight:600;background:var(--surface-2);color:var(--ink);border:1px solid var(--border)}
+.pa-btn.sm.ok{background:#1E7D4F;color:#fff;border-color:#1E7D4F}.pa-btn.sm.bad{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+.pa-msg{margin-top:.8rem;font-size:.84rem;padding:.55rem .7rem;border-radius:8px;display:none}
+.pa-msg.err{display:block;background:var(--danger-soft);color:var(--danger)}.pa-msg.ok{display:block;background:#E3F4EA;color:#1E7D4F}
+.pa-mode{font-size:.72rem;color:var(--ink-faint);margin-top:.9rem;text-align:center}
+#ptpUser{position:fixed;top:1.1rem;right:1.1rem;z-index:60;display:none;align-items:center;gap:.4rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.3rem .4rem .3rem .8rem;box-shadow:var(--shadow);font-size:.82rem}
+#ptpUser b{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-badge{background:var(--danger);color:#fff;border-radius:99px;font-size:.68rem;padding:0 .4rem;margin-left:.2rem}
+#ptpAdmin{position:fixed;inset:0;z-index:9000;background:rgba(10,16,28,.55);display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow:auto}
+.pa-panel{width:100%;max-width:980px;background:var(--surface);border-radius:14px;padding:1.2rem;border:1px solid var(--border)}
+.pa-panel h3{margin:0;font-family:var(--font-head)}
+.pa-hd{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem}
+.pa-add{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5rem;margin-bottom:.8rem}
+.pa-tw{overflow-x:auto}.pa-tw table{width:100%;border-collapse:collapse;font-size:.82rem}
+.pa-tw th,.pa-tw td{padding:.5rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+.pa-tw td:last-child{white-space:nowrap}.pa-tw td:last-child .pa-btn{margin:.1rem}
+.pa-st{padding:.1rem .5rem;border-radius:99px;font-size:.72rem;font-weight:700}
+.pa-st.pending{background:var(--accent-soft);color:var(--accent)}.pa-st.approved{background:#E3F4EA;color:#1E7D4F}.pa-st.blocked{background:var(--danger-soft);color:var(--danger)}
+.pa-log{font-size:.74rem;color:var(--ink-soft);max-height:130px;overflow:auto;margin-top:.8rem;border-top:1px solid var(--border);padding-top:.5rem}
+</style>
+<div id="ptpAuth"><div class="pa-box">
+ <h2>Paid / ToPay Report</h2><p class="pa-sub" id="paSub">Continue karne ke liye login karein</p>
+ <div class="pa-tabs"><button id="paTL" class="on">Login</button><button id="paTS">Create Account</button></div>
+ <div id="paName" style="display:none"><label>Full Name</label><input id="paN" autocomplete="name"></div>
+ <label>Email / Username</label><input id="paE" autocomplete="username">
+ <label>Password</label><input id="paP" type="password" autocomplete="current-password">
+ <label style="display:flex;gap:.4rem;align-items:center;font-weight:500"><input type="checkbox" id="paShow" style="width:auto"> Show password</label>
+ <button class="pa-btn full" id="paGo">Login</button><div class="pa-msg" id="paMsg"></div><div class="pa-mode" id="paMode"></div>
+</div></div>
+<div id="ptpUser"><b id="puName"></b>
+ <button class="pa-btn sm" id="puAdmin" style="display:none">Admin<span class="pa-badge" id="puBadge" style="display:none"></span></button>
+ <button class="pa-btn sm" id="puPw">Password</button><button class="pa-btn sm bad" id="puOut">Logout</button></div>
+<div id="ptpAdmin"><div class="pa-panel">
+ <div class="pa-hd"><h3>Admin Control – Users</h3><div><button class="pa-btn sm" id="paRef">Refresh</button> <button class="pa-btn sm" id="paClose">Close</button></div></div>
+ <div class="pa-add"><input id="aN" placeholder="Name"><input id="aE" placeholder="Email / Username"><input id="aP" placeholder="Password (min 6)"><button class="pa-btn" id="aAdd">+ Add User</button></div>
+ <input id="aQ" placeholder="Search user..." style="width:100%;padding:.5rem .7rem;margin-bottom:.6rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">
+ <div class="pa-tw"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="aT"></tbody></table></div>
+ <div class="pa-log" id="aLog"></div>
+</div></div>
+<script id="ptpAuthJs">
+(function(){
+/* ---- CLOUD SETUP (optional): Firebase project ki details yahan daalein. Khali = Local mode ---- */
+var FB={apiKey:"",projectId:""};
+var cloud=!!(FB.apiKey&&FB.projectId),LS='ptp_users_v1',SS='ptp_session_v1',FL='ptp_fail_v1';
+var DOC='https://firestore.googleapis.com/v1/projects/'+FB.projectId+'/databases/(default)/documents/ptp_auth/store?key='+FB.apiKey;
+var store={users:[],log:[]},me=null,tab='login';
+var $=function(i){return document.getElementById(i)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+function rnd(){var a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,function(b){return b.toString(16).padStart(2,'0')}).join('')}
+async function hash(p,salt){var e=new TextEncoder(),k=await crypto.subtle.importKey('raw',e.encode(p),'PBKDF2',false,['deriveBits']);
+ var b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:e.encode(salt),iterations:100000,hash:'SHA-256'},k,256);return Array.from(new Uint8Array(b),function(x){return x.toString(16).padStart(2,'0')}).join('')}
+async function load(){
+ if(!cloud){try{store=JSON.parse(localStorage.getItem(LS))||store}catch(e){}return}
+ var r=await fetch(DOC);if(r.status==404)return;if(!r.ok)throw new Error('Server error '+r.status);
+ store=JSON.parse((await r.json()).fields.json.stringValue)}
+async function save(){
+ if(!cloud){localStorage.setItem(LS,JSON.stringify(store));return}
+ var r=await fetch(DOC,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{json:{stringValue:JSON.stringify(store)}}})});
+ if(!r.ok)throw new Error('Save failed ('+r.status+')')}
+function log(m){store.log.unshift(new Date().toLocaleString()+' – '+m);store.log=store.log.slice(0,60)}
+function msg(t,k){var m=$('paMsg');m.className='pa-msg '+(k||'err');m.textContent=t}
+function findU(e){e=e.trim().toLowerCase();return store.users.find(function(u){return u.email===e})}
+function setTab(t){tab=t;$('paTL').className=t=='login'?'on':'';$('paTS').className=t=='signup'?'on':'';
+ $('paName').style.display=t=='signup'?'block':'none';$('paGo').textContent=t=='login'?'Login':'Create Account';
+ $('paSub').textContent=t=='login'?'Continue karne ke liye login karein':'Naya account banayein – admin approval ke baad login hoga';$('paMsg').className='pa-msg'}
+function showApp(u){me=u;$('ptpAuth').style.display='none';$('ptpUser').style.display='flex';$('puName').textContent=u.name;
+ $('puAdmin').style.display=u.role=='admin'?'inline-block':'none';badge()}
+function badge(){var n=store.users.filter(function(u){return u.status=='pending'}).length,b=$('puBadge');b.style.display=n&&me&&me.role=='admin'?'inline':'none';b.textContent=n}
+function logout(){localStorage.removeItem(SS);me=null;$('ptpUser').style.display='none';$('ptpAdmin').style.display='none';$('ptpAuth').style.display='flex';$('paP').value='';setTab('login')}
+async function submit(){
+ var em=$('paE').value.trim().toLowerCase(),pw=$('paP').value,nm=$('paN').value.trim(),btn=$('paGo');
+ if(!em||!pw)return msg('Email aur password daalein');
+ btn.disabled=true;
+ try{await load();
+ if(tab=='signup'){
+  if(!nm)return msg('Naam daalein');if(pw.length<6)return msg('Password kam se kam 6 characters ka rakhein');
+  if(findU(em))return msg('Ye email pehle se registered hai');
+  var first=store.users.length==0,salt=rnd();
+  store.users.push({id:rnd(),name:nm,email:em,salt:salt,hash:await hash(pw,salt),pv:rnd(),role:first?'admin':'user',status:first?'approved':'pending',created:Date.now(),last:null});
+  log('New signup: '+em+(first?' (first user = Admin)':''));await save();
+  if(first){msg('Admin account ban gaya! Ab login karein.','ok');setTab('login')}else{msg('Account ban gaya. Admin approve karega tab login kar payenge.','ok');setTab('login');$('paMsg').className='pa-msg ok';$('paMsg').textContent='Account ban gaya. Admin approve karega tab login kar payenge.'}
+  return}
+ var f={};try{f=JSON.parse(localStorage.getItem(FL))||{}}catch(e){}
+ if(f.until&&Date.now()<f.until)return msg('Bahut galat attempts. '+Math.ceil((f.until-Date.now())/1000)+' sec baad try karein');
+ var u=findU(em);
+ if(!u||u.hash!==await hash(pw,u.salt)){f.n=(f.n||0)+1;if(f.n>=5){f.until=Date.now()+60000;f.n=0}localStorage.setItem(FL,JSON.stringify(f));return msg('Email ya password galat hai')}
+ if(u.status=='pending')return msg('Aapka account abhi admin approval ke liye pending hai','err');
+ if(u.status=='blocked')return msg('Aapka account block kar diya gaya hai. Admin se sampark karein','err');
+ localStorage.removeItem(FL);u.last=Date.now();log('Login: '+u.email);await save();
+ localStorage.setItem(SS,JSON.stringify({id:u.id,pv:u.pv}));showApp(u);
+ }catch(e){msg('Error: '+e.message+(cloud?'':' (check browser storage)'))}finally{btn.disabled=false}}
+async function check(){ /* session verify: block/remove/reset hone par auto logout */
+ var s;try{s=JSON.parse(localStorage.getItem(SS))}catch(e){}
+ if(!s)return false;try{await load()}catch(e){return !!me}
+ var u=store.users.find(function(x){return x.id==s.id});
+ if(!u||u.status!='approved'||u.pv!==s.pv)return false;
+ if(!me)showApp(u);else{me=u;badge()}return true}
+function render(){
+ var q=$('aQ').value.toLowerCase(),rows=store.users.filter(function(u){return !q||(u.name+u.email).toLowerCase().indexOf(q)>=0});
+ $('aT').innerHTML=rows.map(function(u){var self=u.id==me.id,b='';
+  if(u.status=='pending')b+='<button class="pa-btn sm ok" data-a="approve" data-i="'+u.id+'">Approve</button>';
+  if(!self&&u.status=='approved')b+='<button class="pa-btn sm" data-a="block" data-i="'+u.id+'">Block</button>';
+  if(u.status=='blocked')b+='<button class="pa-btn sm ok" data-a="unblock" data-i="'+u.id+'">Unblock</button>';
+  b+='<button class="pa-btn sm" data-a="reset" data-i="'+u.id+'">Reset Password</button>';
+  if(!self)b+='<button class="pa-btn sm" data-a="role" data-i="'+u.id+'">'+(u.role=='admin'?'Remove Admin':'Make Admin')+'</button><button class="pa-btn sm bad" data-a="del" data-i="'+u.id+'">Remove</button>';
+  return '<tr><td>'+esc(u.name)+(self?' (you)':'')+'</td><td>'+esc(u.email)+'</td><td>'+u.role+'</td><td><span class="pa-st '+u.status+'">'+u.status+'</span></td><td>'+(u.last?new Date(u.last).toLocaleString():'—')+'</td><td>'+b+'</td></tr>'}).join('')||'<tr><td colspan="6">Koi user nahi</td></tr>';
+ $('aLog').innerHTML='<b>Activity log</b><br>'+store.log.map(esc).join('<br>')}
+async function openAdmin(){try{await load()}catch(e){alert(e.message)}$('ptpAdmin').style.display='flex';render();badge()}
+async function act(a,id){
+ await load();var u=store.users.find(function(x){return x.id==id});if(!u)return render();
+ if(a=='approve'){u.status='approved';log('Approved '+u.email)}
+ else if(a=='block'){u.status='blocked';log('Blocked '+u.email)}
+ else if(a=='unblock'){u.status='approved';log('Unblocked '+u.email)}
+ else if(a=='role'){u.role=u.role=='admin'?'user':'admin';log(u.email+' role → '+u.role)}
+ else if(a=='del'){if(!confirm(u.email+' ko remove karein?'))return;store.users=store.users.filter(function(x){return x.id!=id});log('Removed '+u.email)}
+ else if(a=='reset'){var p=prompt(u.email+' ka naya password (min 6):');if(!p)return;if(p.length<6)return alert('Min 6 characters');
+  u.salt=rnd();u.hash=await hash(p,u.salt);u.pv=rnd();log('Password reset: '+u.email)}
+ try{await save()}catch(e){alert(e.message)}render();badge()}
+async function addUser(){
+ var n=$('aN').value.trim(),e=$('aE').value.trim().toLowerCase(),p=$('aP').value;
+ if(!n||!e||p.length<6)return alert('Naam, email aur 6+ char password daalein');
+ await load();if(findU(e))return alert('Email already exists');var s=rnd();
+ store.users.push({id:rnd(),name:n,email:e,salt:s,hash:await hash(p,s),pv:rnd(),role:'user',status:'approved',created:Date.now(),last:null});
+ log('Admin added '+e);await save();$('aN').value=$('aE').value=$('aP').value='';render()}
+async function changePw(){
+ var o=prompt('Purana password:');if(!o)return;var n=prompt('Naya password (min 6):');if(!n||n.length<6)return alert('Min 6 characters');
+ await load();var u=store.users.find(function(x){return x.id==me.id});
+ if(!u||u.hash!==await hash(o,u.salt))return alert('Purana password galat hai');
+ u.salt=rnd();u.hash=await hash(n,u.salt);u.pv=rnd();log('Password changed: '+u.email);await save();
+ localStorage.setItem(SS,JSON.stringify({id:u.id,pv:u.pv}));alert('Password badal gaya')}
+$('paTL').onclick=function(){setTab('login')};$('paTS').onclick=function(){setTab('signup')};
+$('paGo').onclick=submit;$('paP').onkeydown=function(e){if(e.key=='Enter')submit()};
+$('paShow').onchange=function(){$('paP').type=this.checked?'text':'password'};
+$('puOut').onclick=logout;$('puPw').onclick=changePw;$('puAdmin').onclick=openAdmin;
+$('paClose').onclick=function(){$('ptpAdmin').style.display='none'};$('paRef').onclick=openAdmin;$('aAdd').onclick=addUser;$('aQ').oninput=render;
+$('aT').onclick=function(e){var b=e.target.closest('button');if(b)act(b.dataset.a,b.dataset.i)};
+$('paMode').textContent=cloud?'☁ Cloud mode – sab devices par same users':'💾 Local mode – users sirf is browser me save hote hain';
+check().then(function(ok){if(!ok&&me==null)$('ptpAuth').style.display='flex'});
+setInterval(function(){if(me)check().then(function(ok){if(!ok)logout()})},45000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&me)check().then(function(ok){if(!ok)logout()})});
+})();
+</script>
+<!-- ===== /PTP AUTH ===== -->
+
 <button type="button" class="navToggle" id="navToggle" aria-label="Open menu">
   <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
 </button>
